@@ -15,6 +15,8 @@ const TEXT = {
     "Du trittst in den Außenbezirk ein. Über dir lastet Fels wie eine ewige Nacht. Zwischen Pilztürmen glimmen kalte Lichter – die ersten Vorboten einer Stadt, die von Misstrauen lebt.",
   toCity:
     "Du betrittst den Basar von Menzoberranzan. Stimmen flüstern, handeln, drohen. Spinnensymbole wachen von Balkonen herab, und jeder Blick scheint einen Preis zu haben.",
+  toWild:
+    "Du lässt den Basar hinter dir. Der Lärm verstummt, und die Dunkelheit wird wieder ehrlich: kalt, schwer, still.",
   explore: [
     "Ein schmaler Pfad windet sich zwischen pilzbewachsenen Säulen. Irgendwo kratzt etwas über Stein.",
     "In der Ferne zieht eine bewaffnete Drow-Patrouille vorbei. Du verharrst reglos, bis nur noch ihr Echo bleibt.",
@@ -28,7 +30,8 @@ const TEXT = {
   saved: "Dein Fortschritt wird im Gedächtnis der Stadt verankert.",
   loaded: "Die Schatten erinnern sich an dich.",
   noSave: "Die Dunkelheit kennt diesen Namen nicht.",
-  saveDeleted: "Alle Spuren deiner Anwesenheit sind ausgelöscht."
+  saveDeleted: "Alle Spuren deiner Anwesenheit sind ausgelöscht.",
+  dead: "Deine Kräfte verlassen dich. Die Stadt wird dich nicht vermissen."
 };
 
 // ===== State =====
@@ -37,12 +40,14 @@ let state = null;
 // ===== DOM =====
 const output = $("output");
 
+// HUD
 const hudName = $("hudName");
 const hudHp = $("hudHp");
 const hudGold = $("hudGold");
 const hudDay = $("hudDay");
 const hudLoc = $("hudLoc");
 
+// Buttons (exist in index.html)
 const btnExplore = $("btnExplore");
 const btnRest = $("btnRest");
 const btnTown = $("btnTown");
@@ -68,6 +73,10 @@ function log(text) {
   output.textContent = text;
 }
 
+function inCity() {
+  return state.location === LOCATIONS.CITY;
+}
+
 function render() {
   hudName.textContent = state.name;
   hudHp.textContent = `${state.hp}/${state.hpMax}`;
@@ -75,10 +84,27 @@ function render() {
   hudDay.textContent = state.day;
   hudLoc.textContent = state.location;
 
-  const inCity = state.location === LOCATIONS.CITY;
-  btnExplore.style.display = inCity ? "none" : "inline-block";
-  btnTown.style.display = inCity ? "none" : "inline-block";
+  // LotGD-like contextual nav:
+  // In city: explore hidden, town button becomes "Raus aus der Stadt"
+  // In wild: explore visible, town button "Zur Stadt"
+  if (inCity()) {
+    btnExplore.style.display = "none";
+    btnTown.style.display = "inline-block";
+    btnTown.textContent = "Raus aus der Stadt";
+  } else {
+    btnExplore.style.display = "inline-block";
+    btnTown.style.display = "inline-block";
+    btnTown.textContent = "Zur Stadt";
+  }
+
+  // Rest always available
   btnRest.style.display = "inline-block";
+
+  // If dead, disable action buttons except New/Load
+  const dead = state.hp <= 0;
+  btnExplore.disabled = dead;
+  btnRest.disabled = dead;
+  btnTown.disabled = dead;
 }
 
 function newGame() {
@@ -111,6 +137,7 @@ function resetSave() {
 // ===== Actions =====
 btnExplore.addEventListener("click", () => {
   if (!state) newGame();
+  if (state.hp <= 0) return;
 
   state.day += 1;
   state.fatigue += 1;
@@ -128,7 +155,7 @@ btnExplore.addEventListener("click", () => {
     (dmg ? ` Du erleidest ${dmg} Schaden.` : "");
 
   if (state.hp === 0) {
-    log("Deine Kräfte verlassen dich. Die Stadt wird dich nicht vermissen.");
+    log(TEXT.dead);
   } else {
     log(text);
   }
@@ -138,9 +165,9 @@ btnExplore.addEventListener("click", () => {
 
 btnRest.addEventListener("click", () => {
   if (!state) newGame();
+  if (state.hp <= 0) return;
 
   state.day += 1;
-  state.location = LOCATIONS.WILD;
 
   const heal = 2 + Math.floor(Math.random() * 5);
   state.hp = clamp(state.hp + heal, 0, state.hpMax);
@@ -152,8 +179,15 @@ btnRest.addEventListener("click", () => {
 
 btnTown.addEventListener("click", () => {
   if (!state) newGame();
-  state.location = LOCATIONS.CITY;
-  log(TEXT.toCity);
+  if (state.hp <= 0) return;
+
+  if (inCity()) {
+    state.location = LOCATIONS.WILD;
+    log(TEXT.toWild);
+  } else {
+    state.location = LOCATIONS.CITY;
+    log(TEXT.toCity);
+  }
   render();
 });
 
