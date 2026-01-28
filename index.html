@@ -19,14 +19,29 @@
     </header>
 
     <main class="layout">
-      <!-- Left: "LotGD-like" nav -->
+      <!-- Left: LotGD-like nav -->
       <aside class="nav" aria-label="Navigation">
         <div class="navbox">
-          <div class="navtitle">Aktionen</div>
-          <button class="navlink" id="btnExplore">Erkunden</button>
-          <button class="navlink" id="btnRest">Rasten</button>
-          <button class="navlink" id="btnTown">Zur Stadt</button>
+          <div class="navtitle" id="navTitle">Aktionen</div>
+
+          <!-- Wild actions -->
+          <div id="navWild">
+            <button class="navlink" id="btnExplore">Erkunden</button>
+            <button class="navlink" id="btnRest">Rasten</button>
+            <button class="navlink" id="btnTown">Zur Stadt</button>
+          </div>
+
+          <!-- City actions -->
+          <div id="navCity">
+            <button class="navlink" id="btnMarket">Markt</button>
+            <button class="navlink" id="btnTavern">Taverne</button>
+            <button class="navlink" id="btnHealer">Heiler</button>
+            <button class="navlink" id="btnTownOut">Raus aus der Stadt</button>
+          </div>
+
           <div class="navsep"></div>
+
+          <!-- Meta -->
           <button class="navlink" id="btnNew">Neues Spiel</button>
           <button class="navlink" id="btnSave">Speichern</button>
           <button class="navlink" id="btnLoad">Laden</button>
@@ -36,7 +51,7 @@
         <div class="navbox hint">
           <div class="navtitle">Hinweis</div>
           <div class="small">
-            LotGD-Layout, Menzo-Stil. Inhalte folgen als nächstes (Shop, Gegner, Events).
+            Links ist die LotGD-Navigation. In der Stadt erscheinen andere Optionen als im Außenbezirk.
           </div>
         </div>
       </aside>
@@ -44,25 +59,25 @@
       <!-- Center: content -->
       <section class="content" aria-label="Ausgabe">
         <div class="frame">
-          <div class="framehead">Meldungen</div>
+          <div class="framehead">Tagebuch</div>
           <div class="framebody">
-            <p id="output" class="output">…</p>
+            <div id="output" class="logarea" aria-label="Log"></div>
           </div>
         </div>
 
         <div class="frame">
-          <div class="framehead">Konsole</div>
+          <div class="framehead">Kontext</div>
           <div class="framebody small">
             <ul class="bullets">
-              <li>Nutze links die Aktionen.</li>
-              <li>„Zur Stadt“ schaltet auf Basar-Modus.</li>
-              <li>„Erkunden“ gibt Gold/Schaden und erhöht Tag.</li>
+              <li>„Erkunden“ erhöht Tag, kann Schaden verursachen, bringt Gold.</li>
+              <li>„Zur Stadt“ wechselt ins Basar-Menü.</li>
+              <li>Speichern/Laden nutzt LocalStorage (nur in deinem Browser).</li>
             </ul>
           </div>
         </div>
       </section>
 
-      <!-- Right: stats panel -->
+      <!-- Right: stats -->
       <aside class="stats" aria-label="Status">
         <div class="statbox">
           <div class="stattitle">Status</div>

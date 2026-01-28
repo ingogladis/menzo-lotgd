@@ -1,10 +1,19 @@
 // ===== Utils =====
 const $ = (id) => document.getElementById(id);
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-const nowTime = () => new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+const timeHHMM = () => new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+
+function escapeHtml(s) {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 // ===== Constants =====
-const SAVE_KEY = "menzo_lotgd_save_v2";
+const SAVE_KEY = "menzo_lotgd_save_v3";
 
 const LOCATIONS = {
   WILD: "Außenbezirk",
@@ -28,10 +37,13 @@ const TEXT = {
     "Du findest eine Nische im Fels. Schlaf kommt in kurzen, unruhigen Stößen.",
     "Du lehnst dich gegen kalten Stein und zwingst deinen Atem zur Ruhe."
   ],
-  saved: "Dein Fortschritt wird im Gedächtnis der Stadt verankert.",
-  loaded: "Die Schatten erinnern sich an dich.",
-  noSave: "Die Dunkelheit kennt diesen Namen nicht.",
-  saveDeleted: "Alle Spuren deiner Anwesenheit sind ausgelöscht.",
+  cityMarket: "Der Markt ist ein Netz aus Stimmen. Heute: nur Platzhalter. (Als nächstes bauen wir Kaufen/Verkaufen.)",
+  cityTavern: "Die Taverne ist warm, aber die Wärme ist geliehen. Heute: nur Platzhalter. (Als nächstes: Gerüchte/Quests.)",
+  cityHealer: "Der Heiler verlangt keinen Dank, nur Münzen. Heute: nur Platzhalter. (Als nächstes: Heil-Kosten.)",
+  saved: "Gespeichert.",
+  loaded: "Save geladen.",
+  noSave: "Kein Save gefunden.",
+  saveDeleted: "Save gelöscht.",
   dead: "Deine Kräfte verlassen dich. Die Stadt wird dich nicht vermissen."
 };
 
@@ -40,18 +52,29 @@ let state = null;
 
 // ===== DOM =====
 const output = $("output");
+const navTitle = $("navTitle");
 
-// HUD
+const navWild = $("navWild");
+const navCity = $("navCity");
+
 const hudName = $("hudName");
 const hudHp = $("hudHp");
 const hudGold = $("hudGold");
 const hudDay = $("hudDay");
 const hudLoc = $("hudLoc");
 
-// Buttons
+// Wild buttons
 const btnExplore = $("btnExplore");
 const btnRest = $("btnRest");
 const btnTown = $("btnTown");
+
+// City buttons
+const btnMarket = $("btnMarket");
+const btnTavern = $("btnTavern");
+const btnHealer = $("btnHealer");
+const btnTownOut = $("btnTownOut");
+
+// Meta buttons
 const btnNew = $("btnNew");
 const btnSave = $("btnSave");
 const btnLoad = $("btnLoad");
@@ -67,7 +90,7 @@ function defaultState() {
     day: 1,
     location: LOCATIONS.WILD,
     fatigue: 0,
-    log: [], // array of strings
+    log: []
   };
 }
 
@@ -76,29 +99,17 @@ function inCity() {
 }
 
 function pushLog(line) {
-  const entry = `[${nowTime()}] ${line}`;
+  const entry = `[${timeHHMM()}] ${line}`;
   state.log.push(entry);
-
-  // keep last 80 entries to avoid endless growth
-  if (state.log.length > 80) state.log = state.log.slice(state.log.length - 80);
-
+  if (state.log.length > 120) state.log = state.log.slice(-120);
   renderLog();
 }
 
 function renderLog() {
-  // render as HTML with line breaks, escaped minimally (we only insert our strings)
-  output.innerHTML = state.log.map((l) => `<div class="logline">${escapeHtml(l)}</div>`).join("");
-  // auto-scroll to bottom
+  output.innerHTML = state.log
+    .map((l) => `<div class="logline">${escapeHtml(l)}</div>`)
+    .join("");
   output.scrollTop = output.scrollHeight;
-}
-
-function escapeHtml(s) {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 function render() {
@@ -108,23 +119,28 @@ function render() {
   hudDay.textContent = state.day;
   hudLoc.textContent = state.location;
 
-  // contextual nav like LotGD
+  // LotGD-like contextual nav
   if (inCity()) {
-    btnExplore.style.display = "none";
-    btnTown.style.display = "inline-block";
-    btnTown.textContent = "Raus aus der Stadt";
+    navTitle.textContent = "Basar";
+    navWild.style.display = "none";
+    navCity.style.display = "block";
   } else {
-    btnExplore.style.display = "inline-block";
-    btnTown.style.display = "inline-block";
-    btnTown.textContent = "Zur Stadt";
+    navTitle.textContent = "Außenbezirk";
+    navWild.style.display = "block";
+    navCity.style.display = "none";
   }
 
-  btnRest.style.display = "inline-block";
-
   const dead = state.hp <= 0;
+
+  // Disable actions when dead
   btnExplore.disabled = dead;
   btnRest.disabled = dead;
   btnTown.disabled = dead;
+
+  btnMarket.disabled = dead;
+  btnTavern.disabled = dead;
+  btnHealer.disabled = dead;
+  btnTownOut.disabled = dead;
 
   renderLog();
 }
@@ -143,14 +159,12 @@ function saveGame() {
 function loadGame() {
   const raw = localStorage.getItem(SAVE_KEY);
   if (!raw) {
-    // no state yet; create minimal temporary to show message
     if (!state) state = defaultState();
     pushLog(TEXT.noSave);
     render();
     return;
   }
   state = JSON.parse(raw);
-  // backward safety
   if (!Array.isArray(state.log)) state.log = [];
   pushLog(TEXT.loaded);
   render();
@@ -164,7 +178,7 @@ function resetSave() {
   render();
 }
 
-// ===== Actions =====
+// ===== Actions: Wild =====
 btnExplore.addEventListener("click", () => {
   if (!state) newGame();
   if (state.hp <= 0) return;
@@ -184,9 +198,7 @@ btnExplore.addEventListener("click", () => {
     ` Du findest ${gold} Gold.` +
     (dmg ? ` Du erleidest ${dmg} Schaden.` : "");
 
-  if (state.hp === 0) pushLog(TEXT.dead);
-  else pushLog(line);
-
+  pushLog(state.hp === 0 ? TEXT.dead : line);
   render();
 });
 
@@ -209,21 +221,41 @@ btnTown.addEventListener("click", () => {
   if (!state) newGame();
   if (state.hp <= 0) return;
 
-  if (inCity()) {
-    state.location = LOCATIONS.WILD;
-    pushLog(TEXT.toWild);
-  } else {
-    state.location = LOCATIONS.CITY;
-    pushLog(TEXT.toCity);
-  }
+  state.location = LOCATIONS.CITY;
+  pushLog(TEXT.toCity);
+  render();
+});
+
+// ===== Actions: City =====
+btnTownOut.addEventListener("click", () => {
+  if (!state) newGame();
+  if (state.hp <= 0) return;
+
+  state.location = LOCATIONS.WILD;
+  pushLog(TEXT.toWild);
+  render();
+});
+
+btnMarket.addEventListener("click", () => {
+  if (!state) newGame();
+  pushLog(TEXT.cityMarket);
+  render();
+});
+
+btnTavern.addEventListener("click", () => {
+  if (!state) newGame();
+  pushLog(TEXT.cityTavern);
+  render();
+});
+
+btnHealer.addEventListener("click", () => {
+  if (!state) newGame();
+  pushLog(TEXT.cityHealer);
   render();
 });
 
 // ===== Meta =====
-btnNew.addEventListener("click", () => {
-  newGame();
-});
-
+btnNew.addEventListener("click", newGame);
 btnSave.addEventListener("click", saveGame);
 btnLoad.addEventListener("click", loadGame);
 btnReset.addEventListener("click", resetSave);
