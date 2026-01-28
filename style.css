@@ -1,9 +1,169 @@
+/* ===== Base ===== */
 :root { color-scheme: dark; }
-body { font-family: system-ui, sans-serif; margin: 0; background: #0b0b10; color: #e8e8ef; }
-.wrap { max-width: 780px; margin: 40px auto; padding: 16px; }
-.card { border: 1px solid #2a2a38; background: #12121a; padding: 16px; border-radius: 12px; }
-.row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
-button { padding: 10px 14px; border-radius: 10px; border: 1px solid #2a2a38; background: #1a1a25; color: #e8e8ef; cursor: pointer; }
-button:hover { filter: brightness(1.1); }
-.hud { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-hr { border: 0; border-top: 1px solid #2a2a38; margin: 14px 0; }
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: radial-gradient(1200px 700px at 20% 0%, #141424 0%, #0a0a12 55%, #06060c 100%);
+  color: #e8e8ef;
+}
+
+.page { min-height: 100vh; display: flex; flex-direction: column; }
+
+.small { font-size: 12px; line-height: 1.35; color: #bfc0d4; }
+
+/* ===== Header ===== */
+.top {
+  border-bottom: 1px solid #2a2a38;
+  background: linear-gradient(#0f0f18, #0b0b12);
+}
+
+.brand {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.sigil {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #2a2a38;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.10), rgba(255,255,255,0.00) 55%),
+    linear-gradient(135deg, rgba(120,90,200,0.18), rgba(30,30,60,0.10));
+  box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+}
+
+.title h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.2px;
+}
+
+.subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #bfc0d4;
+}
+
+/* ===== Layout ===== */
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 240px 1fr 300px;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+/* ===== Boxes (LotGD-like) ===== */
+.navbox, .statbox, .frame {
+  border: 1px solid #2a2a38;
+  background: linear-gradient(#0f0f18, #0b0b12);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+}
+
+.navtitle, .stattitle, .framehead {
+  padding: 10px 10px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.00));
+  border-bottom: 1px solid #2a2a38;
+  color: #d8d8e6;
+}
+
+.framebody, .statbox > .small, .navbox.hint .small {
+  padding: 10px 10px;
+}
+
+.content { display: flex; flex-direction: column; gap: 12px; }
+
+/* ===== Nav links (buttons styled like LotGD links) ===== */
+.nav { display: flex; flex-direction: column; gap: 12px; }
+
+.navlink {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  background: transparent;
+  color: #d7d7ef;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.navlink:first-of-type { border-top: 0; }
+
+.navlink:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.navlink:active {
+  background: rgba(255,255,255,0.10);
+}
+
+.navlink.danger { color: #ffb3b3; }
+
+.navsep {
+  height: 1px;
+  margin: 8px 10px;
+  background: #2a2a38;
+}
+
+/* ===== Output ===== */
+.output {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e8e8ef;
+}
+
+.bullets { margin: 0; padding-left: 16px; }
+.bullets li { margin: 6px 0; }
+
+/* ===== Stats table ===== */
+.stats { display: flex; flex-direction: column; gap: 12px; }
+
+.stattable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.stattable th, .stattable td {
+  padding: 8px 10px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  vertical-align: top;
+}
+
+.stattable th {
+  width: 42%;
+  text-align: left;
+  color: #bfc0d4;
+  font-weight: 600;
+}
+
+.stattable td { color: #e8e8ef; }
+
+/* ===== Footer ===== */
+.foot {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 16px 18px;
+  color: #8f90a8;
+}
