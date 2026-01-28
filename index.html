@@ -10,13 +10,33 @@
   <main class="wrap">
     <h1>Menzo: LotGD</h1>
 
-    <section class="card">
-      <p id="output">Du stehst am Rand von Menzoberranzan. Der Pfad führt in die Dunkelheit.</p>
-      <div class="row">
-        <button id="btnExplore">Erkunden</button>
-        <button id="btnRest">Rasten</button>
-      </div>
-    </section>
+<section class="card">
+  <div class="hud">
+    <div><strong>Name:</strong> <span id="hudName">—</span></div>
+    <div><strong>HP:</strong> <span id="hudHp">—</span></div>
+    <div><strong>Gold:</strong> <span id="hudGold">—</span></div>
+    <div><strong>Tag:</strong> <span id="hudDay">—</span></div>
+    <div><strong>Ort:</strong> <span id="hudLoc">—</span></div>
+  </div>
+
+  <hr />
+
+  <p id="output"></p>
+
+  <div class="row">
+    <button id="btnExplore">Erkunden</button>
+    <button id="btnRest">Rasten</button>
+    <button id="btnTown">Zur Stadt</button>
+  </div>
+
+  <div class="row">
+    <button id="btnNew">Neues Spiel</button>
+    <button id="btnSave">Speichern</button>
+    <button id="btnLoad">Laden</button>
+    <button id="btnReset">Reset Save</button>
+  </div>
+</section>
+
   </main>
 
   <script src="app.js"></script>

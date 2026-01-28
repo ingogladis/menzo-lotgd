@@ -5,3 +5,5 @@ body { font-family: system-ui, sans-serif; margin: 0; background: #0b0b10; color
 .row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 button { padding: 10px 14px; border-radius: 10px; border: 1px solid #2a2a38; background: #1a1a25; color: #e8e8ef; cursor: pointer; }
 button:hover { filter: brightness(1.1); }
+.hud { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+hr { border: 0; border-top: 1px solid #2a2a38; margin: 14px 0; }
