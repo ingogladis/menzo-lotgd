@@ -1,10 +1,9 @@
 // ===== Utils =====
 const $ = (id) => document.getElementById(id);
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-const timeHHMM = () => new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
 function escapeHtml(s) {
-  return s
+  return String(s)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -12,8 +11,12 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+function hhmm() {
+  return new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+}
+
 // ===== Constants =====
-const SAVE_KEY = "menzo_lotgd_save_v3";
+const SAVE_KEY = "menzo_lotgd_save_v4";
 
 const LOCATIONS = {
   WILD: "Außenbezirk",
@@ -37,9 +40,9 @@ const TEXT = {
     "Du findest eine Nische im Fels. Schlaf kommt in kurzen, unruhigen Stößen.",
     "Du lehnst dich gegen kalten Stein und zwingst deinen Atem zur Ruhe."
   ],
-  cityMarket: "Der Markt ist ein Netz aus Stimmen. Heute: nur Platzhalter. (Als nächstes bauen wir Kaufen/Verkaufen.)",
-  cityTavern: "Die Taverne ist warm, aber die Wärme ist geliehen. Heute: nur Platzhalter. (Als nächstes: Gerüchte/Quests.)",
-  cityHealer: "Der Heiler verlangt keinen Dank, nur Münzen. Heute: nur Platzhalter. (Als nächstes: Heil-Kosten.)",
+  market: "Der Markt ist ein Netz aus Stimmen. (Platzhalter: als nächstes Kaufen/Verkaufen.)",
+  tavern: "Die Taverne ist warm, aber die Wärme ist geliehen. (Platzhalter: als nächstes Gerüchte/Quests.)",
+  healer: "Der Heiler verlangt keinen Dank, nur Münzen. (Platzhalter: als nächstes Heilung gegen Gold.)",
   saved: "Gespeichert.",
   loaded: "Save geladen.",
   noSave: "Kein Save gefunden.",
@@ -50,37 +53,6 @@ const TEXT = {
 // ===== State =====
 let state = null;
 
-// ===== DOM =====
-const output = $("output");
-const navTitle = $("navTitle");
-
-const navWild = $("navWild");
-const navCity = $("navCity");
-
-const hudName = $("hudName");
-const hudHp = $("hudHp");
-const hudGold = $("hudGold");
-const hudDay = $("hudDay");
-const hudLoc = $("hudLoc");
-
-// Wild buttons
-const btnExplore = $("btnExplore");
-const btnRest = $("btnRest");
-const btnTown = $("btnTown");
-
-// City buttons
-const btnMarket = $("btnMarket");
-const btnTavern = $("btnTavern");
-const btnHealer = $("btnHealer");
-const btnTownOut = $("btnTownOut");
-
-// Meta buttons
-const btnNew = $("btnNew");
-const btnSave = $("btnSave");
-const btnLoad = $("btnLoad");
-const btnReset = $("btnReset");
-
-// ===== Core =====
 function defaultState() {
   return {
     name: "Reisender",
@@ -94,57 +66,156 @@ function defaultState() {
   };
 }
 
-function inCity() {
-  return state.location === LOCATIONS.CITY;
-}
+// ===== DOM =====
+const menuRoot = $("menuRoot");
+const output = $("output");
 
+const pageTitle = $("pageTitle");
+const pageSubtitle = $("pageSubtitle");
+const statusLine = $("statusLine");
+
+const hudName = $("hudName");
+const hudHp = $("hudHp");
+const hudGold = $("hudGold");
+const hudDay = $("hudDay");
+const hudLoc = $("hudLoc");
+const hudHpBar = $("hudHpBar");
+
+// ===== Log =====
 function pushLog(line) {
-  const entry = `[${timeHHMM()}] ${line}`;
+  const entry = `[${hhmm()}] ${line}`;
   state.log.push(entry);
-  if (state.log.length > 120) state.log = state.log.slice(-120);
+  if (state.log.length > 140) state.log = state.log.slice(-140);
   renderLog();
 }
 
 function renderLog() {
   output.innerHTML = state.log
-    .map((l) => `<div class="logline">${escapeHtml(l)}</div>`)
+    .map((l) => {
+      // split only first bracket timestamp
+      const m = l.match(/^\[(\d{2}:\d{2})\]\s*(.*)$/);
+      if (!m) return `<div class="logline">${escapeHtml(l)}</div>`;
+      return `<div class="logline"><span class="logtime">[${escapeHtml(m[1])}]</span> ${escapeHtml(m[2])}</div>`;
+    })
     .join("");
   output.scrollTop = output.scrollHeight;
 }
 
-function render() {
-  hudName.textContent = state.name;
-  hudHp.textContent = `${state.hp}/${state.hpMax}`;
-  hudGold.textContent = state.gold;
-  hudDay.textContent = state.day;
-  hudLoc.textContent = state.location;
+// ===== Menu builder (Port der menu.php-Idee) =====
+function mkGroup(title, items, noteHtml = "") {
+  const wrap = document.createElement("div");
+  wrap.className = "menu-group";
 
-  // LotGD-like contextual nav
-  if (inCity()) {
-    navTitle.textContent = "Basar";
-    navWild.style.display = "none";
-    navCity.style.display = "block";
-  } else {
-    navTitle.textContent = "Außenbezirk";
-    navWild.style.display = "block";
-    navCity.style.display = "none";
+  const t = document.createElement("div");
+  t.className = "menu-title";
+  t.textContent = title;
+
+  const links = document.createElement("div");
+  links.className = "menu-links";
+
+  for (const it of items) {
+    const btn = document.createElement("button");
+    btn.className = "menu-link";
+    btn.type = "button";
+    btn.textContent = it.label;
+    if (it.hint) btn.title = it.hint;
+    btn.disabled = !!it.disabled;
+
+    btn.addEventListener("click", () => it.onClick?.());
+    links.appendChild(btn);
   }
 
+  wrap.appendChild(t);
+  wrap.appendChild(links);
+
+  if (noteHtml) {
+    const n = document.createElement("div");
+    n.className = "menu-note";
+    n.innerHTML = noteHtml;
+    wrap.appendChild(n);
+  }
+
+  return wrap;
+}
+
+function rebuildMenu() {
+  menuRoot.innerHTML = "";
+
   const dead = state.hp <= 0;
+  const inCity = state.location === LOCATIONS.CITY;
 
-  // Disable actions when dead
-  btnExplore.disabled = dead;
-  btnRest.disabled = dead;
-  btnTown.disabled = dead;
+  // Stadt-Gruppe (kontextabhängig)
+  const cityItems = inCity
+    ? [
+        { label: "Heimat", hint: "Zurück ins Herz der Stadt.", onClick: () => goCity(), disabled: dead },
+        { label: "Markt", hint: "Waren, Beute, Gerüchte.", onClick: () => cityMarket(), disabled: dead },
+        { label: "Taverne", hint: "Flüstern, Deals, Aufträge.", onClick: () => cityTavern(), disabled: dead },
+        { label: "Heiler", hint: "Wunden schließen – gegen Münzen.", onClick: () => cityHealer(), disabled: dead },
+        { label: "Raus aus der Stadt", hint: "Zurück in den Außenbezirk.", onClick: () => goWild(), disabled: dead },
+      ]
+    : [
+        { label: "Heimat", hint: "Zurück ins Herz der Stadt.", onClick: () => goCity(), disabled: dead },
+        { label: "Erkunden", hint: "Durch Schatten und Spuren streifen.", onClick: () => explore(), disabled: dead },
+        { label: "Rasten", hint: "Kräfte sammeln.", onClick: () => rest(), disabled: dead },
+      ];
 
-  btnMarket.disabled = dead;
-  btnTavern.disabled = dead;
-  btnHealer.disabled = dead;
-  btnTownOut.disabled = dead;
+  menuRoot.appendChild(mkGroup("Stadt", cityItems));
 
+  // Ausrüstung (Platzhalter, aber wie dein Projekt)
+  menuRoot.appendChild(
+    mkGroup("Ausrüstung", [
+      { label: "Inventar", hint: "Beute und Ausrüstung verwalten. (Platzhalter)", onClick: () => pushLog("Inventar: Platzhalter."), disabled: false },
+      { label: "Fähigkeiten", hint: "Pfade wählen und Schatten schärfen. (Platzhalter)", onClick: () => pushLog("Fähigkeiten: Platzhalter."), disabled: false },
+    ])
+  );
+
+  // System
+  menuRoot.appendChild(
+    mkGroup("System", [
+      { label: "Neues Spiel", hint: "Neuer Start.", onClick: () => newGame(), disabled: false },
+      { label: "Speichern", hint: "Im Browser speichern.", onClick: () => saveGame(), disabled: false },
+      { label: "Laden", hint: "Aus dem Browser laden.", onClick: () => loadGame(), disabled: false },
+      { label: "Reset Save", hint: "Save löschen.", onClick: () => resetSave(), disabled: false },
+    ])
+  );
+
+  // Hinweis wie dein menu.php
+  menuRoot.appendChild(
+    mkGroup(
+      "Hinweis",
+      [],
+      "<em>In Menzoberranzan ist jede Tür ein Versprechen – und jede Ecke eine Lüge.</em>"
+    )
+  );
+}
+
+// ===== Render =====
+function render() {
+  const inCity = state.location === LOCATIONS.CITY;
+
+  hudName.textContent = state.name;
+  hudHp.textContent = `${state.hp}/${state.hpMax}`;
+  hudGold.textContent = String(state.gold);
+  hudDay.textContent = String(state.day);
+  hudLoc.textContent = state.location;
+
+  const hpPct = state.hpMax > 0 ? (state.hp / state.hpMax) * 100 : 0;
+  hudHpBar.style.width = `${clamp(hpPct, 0, 100)}%`;
+
+  pageTitle.textContent = inCity ? "Basar" : "Außenbezirk";
+  pageSubtitle.textContent = inCity
+    ? "Der Preis ist selten Gold. Meist ist es Aufmerksamkeit."
+    : "Die Dunkelheit ist weit. Die Ohren sind näher.";
+
+  statusLine.textContent = state.hp <= 0
+    ? "Du bist bewusstlos (Game Over – vorerst)."
+    : (inCity ? "Du bist in der Stadt." : "Du bist außerhalb der Stadt.");
+
+  rebuildMenu();
   renderLog();
 }
 
+// ===== Game actions =====
 function newGame() {
   state = defaultState();
   pushLog(TEXT.start);
@@ -154,6 +225,7 @@ function newGame() {
 function saveGame() {
   localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   pushLog(TEXT.saved);
+  render();
 }
 
 function loadGame() {
@@ -178,9 +250,21 @@ function resetSave() {
   render();
 }
 
-// ===== Actions: Wild =====
-btnExplore.addEventListener("click", () => {
-  if (!state) newGame();
+function goCity() {
+  if (state.hp <= 0) return;
+  state.location = LOCATIONS.CITY;
+  pushLog(TEXT.toCity);
+  render();
+}
+
+function goWild() {
+  if (state.hp <= 0) return;
+  state.location = LOCATIONS.WILD;
+  pushLog(TEXT.toWild);
+  render();
+}
+
+function explore() {
   if (state.hp <= 0) return;
 
   state.day += 1;
@@ -200,10 +284,9 @@ btnExplore.addEventListener("click", () => {
 
   pushLog(state.hp === 0 ? TEXT.dead : line);
   render();
-});
+}
 
-btnRest.addEventListener("click", () => {
-  if (!state) newGame();
+function rest() {
   if (state.hp <= 0) return;
 
   state.day += 1;
@@ -215,50 +298,12 @@ btnRest.addEventListener("click", () => {
   const line = `${TEXT.rest[Math.floor(Math.random() * TEXT.rest.length)]} Du erholst dich um ${heal} HP.`;
   pushLog(line);
   render();
-});
+}
 
-btnTown.addEventListener("click", () => {
-  if (!state) newGame();
-  if (state.hp <= 0) return;
-
-  state.location = LOCATIONS.CITY;
-  pushLog(TEXT.toCity);
-  render();
-});
-
-// ===== Actions: City =====
-btnTownOut.addEventListener("click", () => {
-  if (!state) newGame();
-  if (state.hp <= 0) return;
-
-  state.location = LOCATIONS.WILD;
-  pushLog(TEXT.toWild);
-  render();
-});
-
-btnMarket.addEventListener("click", () => {
-  if (!state) newGame();
-  pushLog(TEXT.cityMarket);
-  render();
-});
-
-btnTavern.addEventListener("click", () => {
-  if (!state) newGame();
-  pushLog(TEXT.cityTavern);
-  render();
-});
-
-btnHealer.addEventListener("click", () => {
-  if (!state) newGame();
-  pushLog(TEXT.cityHealer);
-  render();
-});
-
-// ===== Meta =====
-btnNew.addEventListener("click", newGame);
-btnSave.addEventListener("click", saveGame);
-btnLoad.addEventListener("click", loadGame);
-btnReset.addEventListener("click", resetSave);
+// City placeholders
+function cityMarket() { pushLog(TEXT.market); }
+function cityTavern() { pushLog(TEXT.tavern); }
+function cityHealer() { pushLog(TEXT.healer); }
 
 // ===== Boot =====
 (() => {

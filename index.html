@@ -6,102 +6,63 @@
   <title>Menzo: LotGD</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <div class="page">
-    <header class="top">
-      <div class="brand">
-        <div class="sigil" aria-hidden="true"></div>
-        <div class="title">
-          <h1>Menzo: LotGD</h1>
-          <div class="subtitle">Unterreich • Intrige • Überleben</div>
-        </div>
-      </div>
-    </header>
 
-    <main class="layout">
-      <!-- Left: LotGD-like nav -->
-      <aside class="nav" aria-label="Navigation">
-        <div class="navbox">
-          <div class="navtitle" id="navTitle">Aktionen</div>
+<body class="theme-lolth">
+  <!-- Optional: minimal header (wie dein altes Theme) -->
+  <div class="navbar">
+    <div class="nav-container">
+      <div class="nav-logo">Menzo: LotGD</div>
+      <span style="color:var(--muted); font-size:12px;">Unterreich • Intrige • Überleben</span>
+    </div>
+  </div>
 
-          <!-- Wild actions -->
-          <div id="navWild">
-            <button class="navlink" id="btnExplore">Erkunden</button>
-            <button class="navlink" id="btnRest">Rasten</button>
-            <button class="navlink" id="btnTown">Zur Stadt</button>
-          </div>
+  <div class="container">
+    <div class="layout">
+      <!-- Sidebar / Navigation -->
+      <aside class="sidebar" aria-label="Navigation">
+        <div id="menuRoot" class="menu-block"></div>
+      </aside>
 
-          <!-- City actions -->
-          <div id="navCity">
-            <button class="navlink" id="btnMarket">Markt</button>
-            <button class="navlink" id="btnTavern">Taverne</button>
-            <button class="navlink" id="btnHealer">Heiler</button>
-            <button class="navlink" id="btnTownOut">Raus aus der Stadt</button>
-          </div>
+      <!-- Content -->
+      <main class="content" aria-label="Inhalt">
+        <h1 id="pageTitle">Außenbezirk</h1>
+        <p id="pageSubtitle">Du bist nur so sicher wie dein letzter Blick über die Schulter.</p>
 
-          <div class="navsep"></div>
-
-          <!-- Meta -->
-          <button class="navlink" id="btnNew">Neues Spiel</button>
-          <button class="navlink" id="btnSave">Speichern</button>
-          <button class="navlink" id="btnLoad">Laden</button>
-          <button class="navlink danger" id="btnReset">Reset Save</button>
+        <div class="notice" style="margin: 12px 0;">
+          <strong>Status:</strong> <span id="statusLine">—</span>
         </div>
 
-        <div class="navbox hint">
-          <div class="navtitle">Hinweis</div>
-          <div class="small">
-            Links ist die LotGD-Navigation. In der Stadt erscheinen andere Optionen als im Außenbezirk.
+        <div class="notice" style="padding: 0;">
+          <div style="padding:12px; border-bottom:1px solid var(--line2); font-weight:800;">Tagebuch</div>
+          <div id="output" style="max-height: 360px; overflow:auto; padding: 10px 12px;"></div>
+        </div>
+      </main>
+
+      <!-- Status -->
+      <aside class="status" aria-label="Status">
+        <div class="stats-block">
+          <div class="stats-title">Status</div>
+
+          <div class="stats-row"><span class="k">Name</span><span class="v" id="hudName">—</span></div>
+
+          <div class="stats-sep"></div>
+
+          <div class="stats-row"><span class="k">HP</span><span class="v" id="hudHp">—</span></div>
+          <div class="stats-bar"><div class="stats-bar-fill" id="hudHpBar" style="width:0%"></div></div>
+
+          <div class="stats-row"><span class="k">Gold</span><span class="v" id="hudGold">—</span></div>
+          <div class="stats-row"><span class="k">Tag</span><span class="v" id="hudDay">—</span></div>
+          <div class="stats-row"><span class="k">Ort</span><span class="v" id="hudLoc">—</span></div>
+
+          <div class="stats-sep"></div>
+
+          <div class="stats-row"><span class="k">Hinweis</span><span class="v" style="font-weight:700;">Pages</span></div>
+          <div class="menu-note">
+            Save liegt im Browser (LocalStorage). Kein Login/Server.
           </div>
         </div>
       </aside>
-
-      <!-- Center: content -->
-      <section class="content" aria-label="Ausgabe">
-        <div class="frame">
-          <div class="framehead">Tagebuch</div>
-          <div class="framebody">
-            <div id="output" class="logarea" aria-label="Log"></div>
-          </div>
-        </div>
-
-        <div class="frame">
-          <div class="framehead">Kontext</div>
-          <div class="framebody small">
-            <ul class="bullets">
-              <li>„Erkunden“ erhöht Tag, kann Schaden verursachen, bringt Gold.</li>
-              <li>„Zur Stadt“ wechselt ins Basar-Menü.</li>
-              <li>Speichern/Laden nutzt LocalStorage (nur in deinem Browser).</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <!-- Right: stats -->
-      <aside class="stats" aria-label="Status">
-        <div class="statbox">
-          <div class="stattitle">Status</div>
-          <table class="stattable">
-            <tr><th>Name</th><td><span id="hudName">—</span></td></tr>
-            <tr><th>HP</th><td><span id="hudHp">—</span></td></tr>
-            <tr><th>Gold</th><td><span id="hudGold">—</span></td></tr>
-            <tr><th>Tag</th><td><span id="hudDay">—</span></td></tr>
-            <tr><th>Ort</th><td><span id="hudLoc">—</span></td></tr>
-          </table>
-        </div>
-
-        <div class="statbox">
-          <div class="stattitle">Gerüchte</div>
-          <div class="small">
-            Im Basar zählt nicht, was gesagt wird — sondern wer es gehört haben will.
-          </div>
-        </div>
-      </aside>
-    </main>
-
-    <footer class="foot small">
-      Menzo: LotGD • Prototype
-    </footer>
+    </div>
   </div>
 
   <script src="app.js"></script>
