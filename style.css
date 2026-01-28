@@ -1,0 +1,7 @@
+:root { color-scheme: dark; }
+body { font-family: system-ui, sans-serif; margin: 0; background: #0b0b10; color: #e8e8ef; }
+.wrap { max-width: 780px; margin: 40px auto; padding: 16px; }
+.card { border: 1px solid #2a2a38; background: #12121a; padding: 16px; border-radius: 12px; }
+.row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+button { padding: 10px 14px; border-radius: 10px; border: 1px solid #2a2a38; background: #1a1a25; color: #e8e8ef; cursor: pointer; }
+button:hover { filter: brightness(1.1); }
