@@ -1,9 +1,10 @@
 // ===== Utils =====
 const $ = (id) => document.getElementById(id);
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+const nowTime = () => new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
 // ===== Constants =====
-const SAVE_KEY = "menzo_lotgd_save_v1";
+const SAVE_KEY = "menzo_lotgd_save_v2";
 
 const LOCATIONS = {
   WILD: "Außenbezirk",
@@ -47,7 +48,7 @@ const hudGold = $("hudGold");
 const hudDay = $("hudDay");
 const hudLoc = $("hudLoc");
 
-// Buttons (exist in index.html)
+// Buttons
 const btnExplore = $("btnExplore");
 const btnRest = $("btnRest");
 const btnTown = $("btnTown");
@@ -66,15 +67,38 @@ function defaultState() {
     day: 1,
     location: LOCATIONS.WILD,
     fatigue: 0,
+    log: [], // array of strings
   };
-}
-
-function log(text) {
-  output.textContent = text;
 }
 
 function inCity() {
   return state.location === LOCATIONS.CITY;
+}
+
+function pushLog(line) {
+  const entry = `[${nowTime()}] ${line}`;
+  state.log.push(entry);
+
+  // keep last 80 entries to avoid endless growth
+  if (state.log.length > 80) state.log = state.log.slice(state.log.length - 80);
+
+  renderLog();
+}
+
+function renderLog() {
+  // render as HTML with line breaks, escaped minimally (we only insert our strings)
+  output.innerHTML = state.log.map((l) => `<div class="logline">${escapeHtml(l)}</div>`).join("");
+  // auto-scroll to bottom
+  output.scrollTop = output.scrollHeight;
+}
+
+function escapeHtml(s) {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function render() {
@@ -84,9 +108,7 @@ function render() {
   hudDay.textContent = state.day;
   hudLoc.textContent = state.location;
 
-  // LotGD-like contextual nav:
-  // In city: explore hidden, town button becomes "Raus aus der Stadt"
-  // In wild: explore visible, town button "Zur Stadt"
+  // contextual nav like LotGD
   if (inCity()) {
     btnExplore.style.display = "none";
     btnTown.style.display = "inline-block";
@@ -97,41 +119,49 @@ function render() {
     btnTown.textContent = "Zur Stadt";
   }
 
-  // Rest always available
   btnRest.style.display = "inline-block";
 
-  // If dead, disable action buttons except New/Load
   const dead = state.hp <= 0;
   btnExplore.disabled = dead;
   btnRest.disabled = dead;
   btnTown.disabled = dead;
+
+  renderLog();
 }
 
 function newGame() {
   state = defaultState();
-  log(TEXT.start);
+  pushLog(TEXT.start);
   render();
 }
 
 function saveGame() {
   localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-  log(TEXT.saved);
+  pushLog(TEXT.saved);
 }
 
 function loadGame() {
   const raw = localStorage.getItem(SAVE_KEY);
   if (!raw) {
-    log(TEXT.noSave);
+    // no state yet; create minimal temporary to show message
+    if (!state) state = defaultState();
+    pushLog(TEXT.noSave);
+    render();
     return;
   }
   state = JSON.parse(raw);
-  log(TEXT.loaded);
+  // backward safety
+  if (!Array.isArray(state.log)) state.log = [];
+  pushLog(TEXT.loaded);
   render();
 }
 
 function resetSave() {
   localStorage.removeItem(SAVE_KEY);
-  log(TEXT.saveDeleted);
+  if (!state) state = defaultState();
+  state.log = [];
+  pushLog(TEXT.saveDeleted);
+  render();
 }
 
 // ===== Actions =====
@@ -149,16 +179,13 @@ btnExplore.addEventListener("click", () => {
   const gold = 1 + Math.floor(Math.random() * 6);
   state.gold += gold;
 
-  const text =
+  const line =
     TEXT.explore[Math.floor(Math.random() * TEXT.explore.length)] +
     ` Du findest ${gold} Gold.` +
     (dmg ? ` Du erleidest ${dmg} Schaden.` : "");
 
-  if (state.hp === 0) {
-    log(TEXT.dead);
-  } else {
-    log(text);
-  }
+  if (state.hp === 0) pushLog(TEXT.dead);
+  else pushLog(line);
 
   render();
 });
@@ -173,7 +200,8 @@ btnRest.addEventListener("click", () => {
   state.hp = clamp(state.hp + heal, 0, state.hpMax);
   state.fatigue = Math.max(0, state.fatigue - 1);
 
-  log(`${TEXT.rest[Math.floor(Math.random() * TEXT.rest.length)]} Du erholst dich um ${heal} HP.`);
+  const line = `${TEXT.rest[Math.floor(Math.random() * TEXT.rest.length)]} Du erholst dich um ${heal} HP.`;
+  pushLog(line);
   render();
 });
 
@@ -183,16 +211,19 @@ btnTown.addEventListener("click", () => {
 
   if (inCity()) {
     state.location = LOCATIONS.WILD;
-    log(TEXT.toWild);
+    pushLog(TEXT.toWild);
   } else {
     state.location = LOCATIONS.CITY;
-    log(TEXT.toCity);
+    pushLog(TEXT.toCity);
   }
   render();
 });
 
 // ===== Meta =====
-btnNew.addEventListener("click", newGame);
+btnNew.addEventListener("click", () => {
+  newGame();
+});
+
 btnSave.addEventListener("click", saveGame);
 btnLoad.addEventListener("click", loadGame);
 btnReset.addEventListener("click", resetSave);
@@ -202,7 +233,8 @@ btnReset.addEventListener("click", resetSave);
   const raw = localStorage.getItem(SAVE_KEY);
   if (raw) {
     state = JSON.parse(raw);
-    log(TEXT.loaded);
+    if (!Array.isArray(state.log)) state.log = [];
+    pushLog(TEXT.loaded);
     render();
   } else {
     newGame();
